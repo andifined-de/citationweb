@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  #svelte:
+  #  build:
+  #    context: ./webapp
+  #    dockerfile: Dockerfile
+  #  volumes:
+  #    - ./:/usr/src/citationweb/
+  #fastapi:
+  #  build:
+  #    context: ./core
+  #    dockerfile: Dockerfile
+#    command: cd ./core && uvicorn routes:app --reload
+  #  volumes:
+  #    - ./:/usr/src/citationweb/
+#    env_file:
+#      - ./.env.dev
+  #  depends_on:
+  #    - db
+  #    - redis
+#      - grobid
+  db:
+    image: postgres:13.0-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=citationweb
+  redis:
+    image: redis:alpine
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+  #celery:
+  #  build: ./
+  #  command: celery -A citationweb worker -l info
+  #  volumes:
+  #    - ./:/usr/src/citationweb/
+  #  environment:
+  #    - DEBUG=1
+  #    - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
+  #    - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+  #  depends_on:
+  #    - redis
+  #celery-beat:
+  #  build: ./
+  #  command: celery -A citationweb beat -l info
+  #  volumes:
+  #    - ./:/usr/src/citationweb/
+  #  environment:
+  #    - DEBUG=1
+  #    - SECRET_KEY=dbaa1_i7%*3r9-=z-+_mz4r-!qeed@(-a_r(g@k8jo8y3r27%m
+  #    - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+  #  depends_on:
+  #    - redis
+  #sciencebeam:
+  #  build:
+  #    context: ./sciencebeam/sciencebeam-parser
+  #    dockerfile: Dockerfile
+  #  ports:
+  #    - "8070:8070"
+  #    - "8071:8071"
+  #grobid:
+  #  platform: linux/amd64
+  #  image: lfoppiano/grobid:0.7.2
+  #  ports:
+  #    - "8070:8070"
+#    volumes:
+#      - ${PWD}/config/grobid.yaml:/opt/grobid/grobid-home/config/grobid.yaml:ro
+volumes:
+  postgres_data:
