@@ -1,59 +1,103 @@
-<script>
-	import Counter from './Counter.svelte';
-	import welcome from '$lib/images/svelte-welcome.webp';
-	import welcome_fallback from '$lib/images/svelte-welcome.png';
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { Graph } from '@cosmograph/cosmos';
+
+	let container: HTMLElement;
+	let canvas: HTMLCanvasElement;
+
+	const defaults = {
+		nodeColor: '#00897b',
+		adjacentNodeColor: '#00564d',
+		linkColor: '#969696'
+	}
+	const config = {
+		simulation: {
+			repulsion: 2,
+			linkSpring: 2,
+			gravity: 0.1
+		},
+		renderLinks: true,
+		linkGreyoutOpacity: 0.05,
+		linkColor: link => link.color || defaults.linkColor,
+		nodeColor: node => node.color || defaults.nodeColor,
+		backgroundColor: '#282828',
+		nodeSize: node => node.size || 1,
+	}
+
+
+	onMount(() => {
+		let graph: any;
+
+		//const graph = new Graph({type: 'directed'});
+
+		(async () => {
+			const data = await fetchCitations();
+			console.log(data)
+			graph = new Graph(canvas, config);
+			graph.setConfig({
+				events: {
+					onClick: node => {
+						highlightSelectedNodes(graph, node)
+						console.log('Clicked node: ', node)
+					},
+				},
+			});
+			graph.setData(data.nodes, data.edges)
+		})();
+	});
+
+	const fetchCitations = async () => {
+		let currentEdgeIndex = 0;
+		const nodes = new Map<string, any>();
+		const edges = new Map<string, any>();
+
+		const response = await fetch('http://localhost:8000/citations');
+		const citations: any[] = await response.json();
+
+		citations.forEach((citation) => {
+			nodes.set(citation.cited.id, {
+				id: citation.cited.id,
+				//label: citation.source.title,
+				size: citation.cited.citation_score
+			});
+			nodes.set(citation.citing.id, {
+				id: citation.citing.id,
+				//label: citation.referencing_paper.title,
+				size: citation.citing.citation_score
+			});
+			edges.set(`e${currentEdgeIndex}`, {
+				id: `e${currentEdgeIndex}`,
+				source: citation.citing.id,
+				target: citation.cited.id,
+				type: 'arrow',
+			})
+			currentEdgeIndex++;
+		})
+		return {nodes: Array.from(nodes.values()), edges: Array.from(edges.values())}
+	};
+
+	const highlightSelectedNodes = (graph: any, node: any) => {
+		if (!!graph) {
+			graph.unselectNodes()
+			const nodes = graph.getAdjacentNodes(node.id);
+			graph.selectNodesByIds([node.id , ...nodes.map((n) => n.id)]); // Select adjacent nodes
+		}
+	}
 </script>
 
 <svelte:head>
-	<title>Home</title>
+	<title>Citation Web</title>
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-<section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcome_fallback} alt="Welcome" />
-			</picture>
-		</span>
-
-		to your new<br />SvelteKit app
-	</h1>
-
-	<h2>
-		try editing <strong>src/routes/+page.svelte</strong>
-	</h2>
-
-	<Counter />
-</section>
+<canvas class="network-graph" bind:this={canvas}></canvas>
 
 <style>
-	section {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		flex: 0.6;
-	}
-
-	h1 {
-		width: 100%;
-	}
-
-	.welcome {
-		display: block;
-		position: relative;
-		width: 100%;
-		height: 0;
-		padding: 0 0 calc(100% * 495 / 2048) 0;
-	}
-
-	.welcome img {
+	.network-graph {
+		width: 100vw;
+		height: 100vh;
 		position: absolute;
-		width: 100%;
-		height: 100%;
 		top: 0;
-		display: block;
+		left: 0;
 	}
 </style>

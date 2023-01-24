@@ -9,14 +9,13 @@ class CitationBase(BaseModel):
 class CitationLiteratureRead(BaseModel):
 	id: int
 	title: Optional[str]
+	citation_score: Optional[int]
 
 	class Config:
 		orm_mode = True
 
 class CitationRead(CitationBase):
-	source_id: int
-	referencing_id: int
 	page_start: Optional[str]
 	page_end: Optional[str]
-	source: CitationLiteratureRead
-	referencing_paper: CitationLiteratureRead
+	cited: CitationLiteratureRead
+	citing: CitationLiteratureRead

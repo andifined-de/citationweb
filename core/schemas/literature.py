@@ -35,8 +35,17 @@ class LiteratureRead(LiteratureBase):
 	id: Optional[int]
 	title: Optional[str]
 	doi: Optional[str]
-	sources: list[LiteratureReadReference] = list()
-
+	sources: list[LiteratureReadReference] = []
+	referenced_by: list[LiteratureReadReference] = []
+	citation_score: Optional[int] = None
+	date_score: Optional[float] = None
+	"""
+	@validator('citation_score', always=True)
+	def parse_citation_score(cls, v, values) -> int:
+		if (values['referenced_by'] == None):
+			return 1
+		return len(values['referenced_by']) + 1
+	"""
 class LiteratureCreate(LiteratureBase):
 	title: str
 	subtitle: Optional[str]
