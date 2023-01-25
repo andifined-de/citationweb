@@ -5,7 +5,7 @@ from validation.response.literature import LiteratureResponse
 
 class LiteratureStump(BaseModel):
 	id: int
-	title: Optional[str]
+	title: str
 	citation_score: int
 
 	class Config:
@@ -14,8 +14,8 @@ class LiteratureStump(BaseModel):
 
 class CitationResponse(BaseModel):
 	id: int
-	cited_id: int
-	citing_id: int
+	cited: LiteratureStump
+	citing: LiteratureStump
 
 	class Config:
 		orm_mode = True
