@@ -2,8 +2,8 @@ from typing import Protocol, Optional
 
 from sqlalchemy.orm import Session
 
-from database.decorators.transaction import db
-from database.models.author import AuthorModel, EmailModel
+from domain.decorators.transaction import db
+from domain.models.author import AuthorModel, EmailModel
 
 
 @db
@@ -31,6 +31,9 @@ def get_author(id_: int, db: Session) -> AuthorModel:
 def get_all_authors(db: Session) -> list[AuthorModel]:
     return db.query(AuthorModel).all()
 
+@db
+def get_all_author_citations(db: Session):
+    pass
 
 @db
 def find_author_by_name(first_name: str, middle_name: Optional[str], last_name: str, db: Session) -> Optional[AuthorModel]:

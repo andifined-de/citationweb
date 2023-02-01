@@ -51,7 +51,7 @@
 		const nodes = new Map<string, any>();
 		const edges = new Map<string, any>();
 
-		const response = await fetch('http://localhost:8000/citations');
+		const response = await fetch('http://localhost:8000/api/v1citations');
 		const citations: any[] = await response.json();
 
 		citations.forEach((citation) => {

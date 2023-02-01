@@ -1,4 +1,6 @@
-from sqlalchemy.orm import Session, aliased
+
+"""
+from sqlalchemy.orm import Session, aliased, joinedload
 import models
 from validation.request.literature import CreateLiteratureRequest, SearchLiteratureRequest
 from schemas.address import AddressCreate
@@ -6,6 +8,7 @@ from schemas.author import AuthorCreate
 from schemas.literature import *
 from validation.request.author import SearchAuthorRequest, CreateAuthorRequest
 import time
+
 
 
 def create_address(db: Session, address: AddressCreate):
@@ -79,7 +82,7 @@ def create_literature(db: Session, literature: CreateLiteratureRequest):
         result = create_update_author(db, author)
         created_literature.authors.append(result)
     for citation in literature.citations:
-        # if literature is already in database, link them, if not, create them and update later when supplied
+        # if literature is already in domain, link them, if not, create them and update later when supplied
         result = create_update_literature(db, citation)
         created_literature.citations.append(result)
     db.commit()
@@ -106,7 +109,7 @@ def get_all_literature(db: Session):
 def get_all_citations(db: Session):
     source_literature = aliased(models.Literature)
     referencing_literature = aliased(models.Literature)
-    result = db.query(models.Citation).join(
+    result = db.query(models.Citation).options(joinedload("source_literature,referencing_literature")).join(
         source_literature, models.Citation.cited_id == source_literature.id
     ).join(
         referencing_literature, models.Citation.citing_id == referencing_literature.id
@@ -116,3 +119,4 @@ def get_all_citations(db: Session):
 
 def get_all_authors(db: Session):
     return db.query(models.Author).all()
+"""

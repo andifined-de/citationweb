@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship
 
-from database.connection import Base
+from domain.connection import Base
 
 
 class CitationModel(Base):

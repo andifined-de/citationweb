@@ -1,10 +1,10 @@
-from sqlalchemy import Integer, Column, Table, ForeignKey, String, UnicodeText, Date
+from sqlalchemy import Integer, Column, Table, ForeignKey, String, Date
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from database.connection import Base
-from database.models.citation import CitationModel
-from database.models.tag import TagModel
+from domain.connection import Base
+from domain.models.citation import CitationModel
+from domain.models.tag import TagModel
 
 tag_literature_rel = Table(
     'tag_literature',
@@ -27,8 +27,8 @@ class LiteratureModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column('title', String(), index=True)
     subtitle = Column('subtitle', String())
-    abstract = Column('abstract', UnicodeText)
-    body = Column('body', UnicodeText)
+    # abstract = Column('abstract', UnicodeText)
+    # body = Column('body', UnicodeText)
     url = Column('url', String())
     published_date = Column('published_date', Date)
     doi = Column('doi', String(), index=True)

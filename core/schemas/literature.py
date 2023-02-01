@@ -1,80 +1,44 @@
-from pydantic import BaseModel, validator
-import datetime
-from datetime import date
-from typing import Optional, ForwardRef
-from .author import AuthorBase
-from .tag import TagBase
+from pydantic import BaseModel
+from typing import Optional, Protocol
 
-import pandas as pd
+from schemas.author import AuthorInput, AuthorData
 
-LiteratureRead = ForwardRef('LiteratureRead')
-LiteratureCreate = ForwardRef('LiteratureCreate')
-LiteratureUpdate = ForwardRef('LiteratureUpdate')
 
-class LiteratureBase(BaseModel):
-	class Config:
-		orm_mode = True
+class LiteratureInput(Protocol):
+	id: Optional[int]
+	title: Optional[str]
+	subtitle: Optional[str]
+	doi: Optional[str]
+	url: Optional[str]
+	citations: list['LiteratureInput'] = []
+	authors: list[AuthorInput] = []
 
-	@validator('published_date', pre=True, check_fields=False)
-	def parse_published(cls, value):
-		if (value != None):
-			date = pd.to_datetime(value, errors='coerce').date()
-			if (not pd.isnull(date)):
-				return date
-		return None
 
 # FIXME: find better way to fix recursion
 # maybe marshmallow as a layer?
-#https://stackoverflow.com/questions/69544658/how-to-build-a-self-referencing-model-in-pydantic-with-dataclasses
-class LiteratureReadReference(LiteratureBase):
+# https://stackoverflow.com/questions/69544658/how-to-build-a-self-referencing-model-in-pydantic-with-dataclasses
+class LiteratureReferenceData(BaseModel):
 	id: int
-	# title: Optional[str]
-	#doi: Optional[str]
-
-class LiteratureRead(LiteratureBase):
-	id: Optional[int]
-	title: Optional[str]
+	title: str
 	doi: Optional[str]
-	sources: list[LiteratureReadReference] = []
-	referenced_by: list[LiteratureReadReference] = []
 	citation_score: Optional[int] = None
 	date_score: Optional[float] = None
-	"""
-	@validator('citation_score', always=True)
-	def parse_citation_score(cls, v, values) -> int:
-		if (values['referenced_by'] == None):
-			return 1
-		return len(values['referenced_by']) + 1
-	"""
-class LiteratureCreate(LiteratureBase):
+
+	class Config:
+		orm_mode = True
+
+
+class LiteratureData(BaseModel):
+	id: Optional[int]
 	title: str
-	subtitle: Optional[str]
-	abstract: Optional[str]
-	body: Optional[str]
-	url: Optional[str]
-	published_date: Optional[date]
 	doi: Optional[str]
-	sources: list['LiteratureBase'] = []
-	authors: list[AuthorBase] = []
-	tags: list[TagBase] = []
+	citations: list[LiteratureReferenceData] = []
+	authors: list[AuthorData] = []
+	citation_score: Optional[int] = None
+	date_score: Optional[float] = None
 
-class LiteratureUpdate(LiteratureBase):
-	id: int
-	title: Optional[str]
-	subtitle: Optional[str]
-	abstract: Optional[str]
-	body: Optional[str]
-	url: Optional[str]
-	published_date: Optional[date]
-	doi: Optional[str]
-	sources: list['LiteratureBase'] = []
-	authors: list[AuthorBase] = []
-	tags: list[TagBase] = []
-
-class LiteratureDelete(LiteratureBase):
-	id: int
+	class Config:
+		orm_mode = True
 
 
-LiteratureCreate.update_forward_refs()
-LiteratureUpdate.update_forward_refs()
-LiteratureRead.update_forward_refs()
+

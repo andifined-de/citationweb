@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 
-from database.connection import Base
+from domain.connection import Base
 
 
 class TagModel(Base):

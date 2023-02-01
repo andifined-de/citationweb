@@ -1,4 +1,4 @@
-from database.connection import SessionLocal
+from domain.connection import SessionLocal
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
 

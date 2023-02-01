@@ -19,8 +19,8 @@ class SearchLiteratureRequest(BaseModel):
 class CreateLiteratureRequest(BaseModel):
     title: str
     subtitle: Optional[str]
-    abstract: Optional[str]
-    body: Optional[str]
+    # abstract: Optional[str]
+    # body: Optional[str]
     url: Optional[str]
     authors: list[CreateAuthorRequest | SearchAuthorRequest] = []
     doi: Optional[str]
@@ -42,8 +42,8 @@ class UpdateLiteratureRequest(BaseModel):
     subtitle: Optional[str]
     authors: list[CreateAuthorRequest | SearchAuthorRequest] = []
     doi: Optional[str]
-    abstract: Optional[str]
-    body: Optional[str]
+    # abstract: Optional[str]
+    # body: Optional[str]
     url: Optional[str]
     citations: list[CreateLiteratureRequest | ReadLiteratureRequest] = []
     published_date: Optional[date]

@@ -2,9 +2,8 @@ from typing import Protocol, Optional
 
 from sqlalchemy.orm import Session
 
-from database.decorators.transaction import db
-from database.models.author import AuthorModel, EmailModel
-from database.models.literature import LiteratureModel
+from domain.decorators.transaction import db
+from domain.models.literature import LiteratureModel
 
 
 @db

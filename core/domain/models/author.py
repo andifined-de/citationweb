@@ -2,8 +2,8 @@ from sqlalchemy import Integer, Column, String, ForeignKey
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
-from database.connection import Base
-from database.models.literature import author_literature_rel
+from domain.connection import Base
+from domain.models.literature import author_literature_rel
 
 
 class EmailModel(Base):

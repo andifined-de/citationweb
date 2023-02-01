@@ -1,6 +1,6 @@
 import contextvars
 from functools import wraps
-from database.connection import SessionLocal
+from domain.connection import SessionLocal
 
 # Context variable to save the db session
 session_context = contextvars.ContextVar("db_session", default=None)
