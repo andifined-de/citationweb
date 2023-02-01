@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 import crud
-from services.author_service import get_all_author_citations
+from services.author import get_all_author_citations
 from validation.response.author import AuthorResponse
 from validation.request.literature import SearchLiteratureRequest
 from validation.response.literature import LiteratureResponse

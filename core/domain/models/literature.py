@@ -1,0 +1,62 @@
+from sqlalchemy import Integer, Column, Table, ForeignKey, String, UnicodeText, Date
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
+
+from database.connection import Base
+from database.models.citation import CitationModel
+from database.models.tag import TagModel
+
+tag_literature_rel = Table(
+    'tag_literature',
+    Base.metadata,
+    Column('tag_id', Integer, ForeignKey('tags.id'), index=True),
+    Column('literature_id', Integer, ForeignKey('literatures.id'), index=True),
+)
+
+author_literature_rel = Table(
+    'author_literature',
+    Base.metadata,
+    Column('id', Integer, primary_key=True),
+    Column('author_id', Integer, ForeignKey('authors.id'), index=True),
+    Column('literature_id', Integer, ForeignKey('literatures.id'), index=True),
+)
+
+
+class LiteratureModel(Base):
+    __tablename__ = 'literatures'
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column('title', String(), index=True)
+    subtitle = Column('subtitle', String())
+    abstract = Column('abstract', UnicodeText)
+    body = Column('body', UnicodeText)
+    url = Column('url', String())
+    published_date = Column('published_date', Date)
+    doi = Column('doi', String(), index=True)
+
+    # doi doesnt have a predefined maxlength: https://www.doi.org/overview/DOI_article_ELIS3.pdf
+
+    @hybrid_property
+    def citation_score(self):
+        return len(self.cited_by) + 1  # add one to have a non zero node size
+
+    citations = relationship(
+        'LiteratureModel',
+        secondary='citations',
+        primaryjoin=id == CitationModel.cited_id,
+        secondaryjoin=id == CitationModel.citing_id,
+        backref='cited_by',
+        lazy='joined',
+        join_depth=1
+    )
+    authors = relationship(
+        'AuthorModel',
+        secondary=author_literature_rel,
+        back_populates='literature',
+        join_depth=1
+    )
+    tags = relationship(
+        TagModel,
+        secondary=tag_literature_rel,
+        backref='literature',
+        join_depth=1
+    )
