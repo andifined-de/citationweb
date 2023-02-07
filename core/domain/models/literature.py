@@ -1,8 +1,9 @@
-from sqlalchemy import Integer, Column, Table, ForeignKey, String, Date
+from sqlalchemy import Integer, Column, Table, ForeignKey, String, Date, select, text, table, column, func
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+import sqlalchemy_utils
 
-from domain.connection import Base
+from domain.connection import Base, engine
 from domain.models.citation import CitationModel
 from domain.models.tag import TagModel
 
@@ -60,3 +61,18 @@ class LiteratureModel(Base):
         backref='literature',
         join_depth=1
     )
+
+
+c = table('citations', column('cited_id'), column('citing_id'))
+l1 = table('literatures', column('id'), column('title')).alias('l1')
+l2 = table('literatures', column('id'), column('title')).alias('l2')
+citation_literature_view = select([
+    column('cited_id'),
+    column('citing_id'),
+    text('l1.title as cited_title'),
+    text('l2.title as citing_title')#,
+#    func.count('cited_id')
+]).select_from(c).join(l1, c.c.cited_id == l1.c.id).join(l2, c.c.citing_id == l2.c.id)
+print(str(citation_literature_view))
+sqlalchemy_utils.create_materialized_view('citation_literature_view', citation_literature_view, Base.metadata)
+#Base.metadata.create_all(engine)

@@ -11,6 +11,7 @@
 	import FA2Layout from "graphology-layout-forceatlas2/worker";
 	import forceAtlas2 from "graphology-layout-forceatlas2";
 	import type { EdgeDisplayData, NodeDisplayData } from 'sigma/types';
+	import circlepack from 'graphology-layout/circlepack';
 
 	interface State {
 		hoveredNode?: string;
@@ -34,13 +35,19 @@
 			console.log(data);
 			graph.import(data);
 			console.log(graph);
-			circular.assign(graph);
+			circlepack.assign(graph);
 			const sensibleSettings = forceAtlas2.inferSettings(graph);
+			sensibleSettings.barnesHutOptimize = true;
+			sensibleSettings.gravity = 0.1;
+			sensibleSettings.outboundAttractionDistribution = true;
 			const fa2Layout = new FA2Layout(graph, {
 				settings: sensibleSettings,
 			});
 			// Cheap trick: tilt the camera a bit to make labels more readable:
-			const renderer = new Sigma(graph, container);
+			const renderer = new Sigma(graph, container, {
+				defaultNodeColor: '#36c9c9',
+				defaultEdgeColor: '#36c9c9'
+			});
 			renderer.getCamera().setState({
 				angle: 0.2,
 			});
@@ -66,12 +73,12 @@
 
 				if (state.hoveredNeighbors && !state.hoveredNeighbors.has(node) && state.hoveredNode !== node) {
 					res.label = '';
-					res.color = 'rgba(190,190,190,0.2)';
+					res.color = 'hsl(208, 33%, 20%)';
 				}
 
 				if (state.selectedNode === node) {
 					res.highlighted = true;
-					res.color = 'rgba(102,178,178, 1)';
+					res.color = '#44dbdb';
 				}
 				return res;
 			});
@@ -83,6 +90,10 @@
 			//    suggestions
 			renderer.setSetting("edgeReducer", (edge, data) => {
 				const res: Partial<EdgeDisplayData> = { ...data };
+
+				if (!state.hoveredNode) {
+					res.hidden = true;
+				}
 
 				if (state.hoveredNode && !graph.hasExtremity(edge, state.hoveredNode)) {
 					res.hidden = true;
@@ -158,7 +169,7 @@
 
 <canvas class="network-graph" bind:this={canvas}></canvas>
 <div id="sigma-container"></div>
-<button id="fa2"></button>
+<button id="fa2">Start layout ▶</button>
 <style>
 	.network-graph, #sigma-container {
 		width: 100vw;
@@ -171,5 +182,7 @@
 	button {
 		position: absolute;
 		z-index: 99;
+		padding: 1rem 2rem;
+		border-radius: 100vmax;
 	}
 </style>

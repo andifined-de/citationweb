@@ -27,7 +27,7 @@ class CitationData:
 
 
 class CitationResponse(BaseModel):
-	id: int
+	id: Optional[int]
 	cited: LiteratureStump
 	citing: LiteratureStump
 

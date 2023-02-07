@@ -2,6 +2,7 @@ fastapi==0.88
 uvicorn==0.20
 grobid_tei_xml==0.1.3
 sqlalchemy
+sqlalchemy-utils
 psycopg2
 pydantic[email]
 pydantic[dotenv]
