@@ -1,48 +1,122 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Graph } from '@cosmograph/cosmos';
+	import Sigma from "sigma";
+	import Graph from 'graphology';
+	import seedrandom from "seedrandom";
 
-	let container: HTMLElement;
+	import EdgesDefaultProgram from "sigma/rendering/webgl/programs/edge";
+	import EdgesFastProgram from "sigma/rendering/webgl/programs/edge.fast";
+
+	import circular from 'graphology-layout/circular';
+	import FA2Layout from "graphology-layout-forceatlas2/worker";
+	import forceAtlas2 from "graphology-layout-forceatlas2";
+	import type { EdgeDisplayData, NodeDisplayData } from 'sigma/types';
+	import circlepack from 'graphology-layout/circlepack';
+
+	interface State {
+		hoveredNode?: string;
+		hoveredNeighbors?: Set<string>;
+		selectedNode?: string;
+	}
+	const state: State = {};
+
+
 	let canvas: HTMLCanvasElement;
+	let container: HTMLElement;
 
-	const defaults = {
-		nodeColor: '#00897b',
-		adjacentNodeColor: '#00564d',
-		linkColor: '#969696'
-	}
-	const config = {
-		simulation: {
-			repulsion: 2,
-			linkSpring: 2,
-			gravity: 0.1
-		},
-		renderLinks: true,
-		linkGreyoutOpacity: 0.05,
-		linkColor: link => link.color || defaults.linkColor,
-		nodeColor: node => node.color || defaults.nodeColor,
-		backgroundColor: '#282828',
-		nodeSize: node => node.size || 1,
-	}
-
+	const graph = new Graph({multi: true, allowSelfLoops: true, type: 'directed'});
 
 	onMount(() => {
-		let graph: any;
-
-		//const graph = new Graph({type: 'directed'});
+		container = document.getElementById("sigma-container") as HTMLElement;
+		const fa2Button = document.getElementById("fa2") as HTMLButtonElement;
 
 		(async () => {
 			const data = await fetchCitations();
-			console.log(data)
-			graph = new Graph(canvas, config);
-			graph.setConfig({
-				events: {
-					onClick: node => {
-						highlightSelectedNodes(graph, node)
-						console.log('Clicked node: ', node)
-					},
-				},
+			graph.import(data);
+			circlepack.assign(graph);
+			const sensibleSettings = forceAtlas2.inferSettings(graph);
+			sensibleSettings.barnesHutOptimize = true;
+			sensibleSettings.gravity = 0.1;
+			sensibleSettings.outboundAttractionDistribution = true;
+			sensibleSettings.strongGravityMode = true;
+			const fa2Layout = new FA2Layout(graph, {
+				settings: sensibleSettings,
 			});
-			graph.setData(data.nodes, data.edges)
+			// Cheap trick: tilt the camera a bit to make labels more readable:
+			const renderer = new Sigma(graph, container, {
+				defaultNodeColor: '#36c9c9',
+				defaultEdgeColor: '#36c9c9',
+				allowInvalidContainer: true
+			});
+			renderer.getCamera().setState({
+				angle: 0.2,
+			});
+
+			// Bind graph interactions:
+			renderer.on("enterNode", ({ node }) => {
+				setHoveredNode(renderer, node);
+			});
+			renderer.on("leaveNode", () => {
+				setHoveredNode(renderer, undefined);
+			});
+
+
+			// Render nodes accordingly to the internal state:
+			// 1. If a node is selected, it is highlighted
+			// 2. If there is a hovered node, all non-neighbor nodes are greyed
+			renderer.setSetting("nodeReducer", (node, data) => {
+				const res: Partial<NodeDisplayData> = { ...data };
+
+				// res.size = graph.neighbors(node).length + 1;
+				if (!state.hoveredNode) {
+					res.label = '';
+				}
+
+				if (state.hoveredNeighbors && !state.hoveredNeighbors.has(node) && state.hoveredNode !== node) {
+					res.label = '';
+					res.color = 'hsl(208, 33%, 20%)';
+				}
+
+				if (state.hoveredNeighbors && state.hoveredNeighbors.has(node)) {
+					res.highlighted = true;
+				}
+
+				if (state.selectedNode === node) {
+					res.highlighted = true;
+					res.color = '#44dbdb';
+				}
+				return res;
+			});
+
+			// Render edges accordingly to the internal state:
+			// 1. If a node is hovered, the edge is hidden if it is not connected to the
+			//    node
+			// 2. If there is a query, the edge is only visible if it connects two
+			//    suggestions
+			renderer.setSetting("edgeReducer", (edge, data) => {
+				const res: Partial<EdgeDisplayData> = { ...data };
+
+				if (!state.hoveredNode) {
+					res.hidden = true;
+				}
+
+				if (state.hoveredNode && !graph.hasExtremity(edge, state.hoveredNode)) {
+					res.hidden = true;
+				}
+
+				return res;
+			});
+
+			function toggleFA2Layout() {
+				if (fa2Layout.isRunning()) {
+					fa2Layout.stop();
+					fa2Button.innerHTML = `Start layout ▶`;
+				} else {
+					fa2Layout.start();
+					fa2Button.innerHTML = `Stop layout ⏸`;
+				}
+			}
+			fa2Button.addEventListener("click", toggleFA2Layout);
 		})();
 	});
 
@@ -51,37 +125,46 @@
 		const nodes = new Map<string, any>();
 		const edges = new Map<string, any>();
 
-		const response = await fetch('http://localhost:8000/api/v1citations');
+		const response = await fetch('http://localhost:8000/api/v1/citations/search');
 		const citations: any[] = await response.json();
 
 		citations.forEach((citation) => {
 			nodes.set(citation.cited.id, {
-				id: citation.cited.id,
-				//label: citation.source.title,
-				size: citation.cited.citation_score
+				key: citation.cited.id,
+				attributes: {
+					label: citation.cited.title,
+					size: Math.log(citation.cited.citation_score)
+				}
 			});
 			nodes.set(citation.citing.id, {
-				id: citation.citing.id,
-				//label: citation.referencing_paper.title,
-				size: citation.citing.citation_score
+				key: citation.citing.id,
+				attributes: {
+					label: citation.citing.title,
+				}
 			});
 			edges.set(`e${currentEdgeIndex}`, {
-				id: `e${currentEdgeIndex}`,
+				key: `e${currentEdgeIndex}`,
 				source: citation.citing.id,
 				target: citation.cited.id,
-				type: 'arrow',
+				type: 'arrow'
 			})
 			currentEdgeIndex++;
 		})
+		console.log(edges);
 		return {nodes: Array.from(nodes.values()), edges: Array.from(edges.values())}
 	};
 
-	const highlightSelectedNodes = (graph: any, node: any) => {
-		if (!!graph) {
-			graph.unselectNodes()
-			const nodes = graph.getAdjacentNodes(node.id);
-			graph.selectNodesByIds([node.id , ...nodes.map((n) => n.id)]); // Select adjacent nodes
+	function setHoveredNode(renderer: Sigma, node?: string) {
+		if (node) {
+			state.hoveredNode = node;
+			state.hoveredNeighbors = new Set(graph.neighbors(node));
+		} else {
+			state.hoveredNode = undefined;
+			state.hoveredNeighbors = undefined;
 		}
+
+		// Refresh rendering:
+		renderer.refresh();
 	}
 </script>
 
@@ -91,13 +174,21 @@
 </svelte:head>
 
 <canvas class="network-graph" bind:this={canvas}></canvas>
-
+<div id="sigma-container"></div>
+<button id="fa2">Start layout ▶</button>
 <style>
-	.network-graph {
+	.network-graph, #sigma-container {
 		width: 100vw;
 		height: 100vh;
 		position: absolute;
 		top: 0;
 		left: 0;
+	}
+
+	button {
+		position: absolute;
+		z-index: 99;
+		padding: 1rem 2rem;
+		border-radius: 100vmax;
 	}
 </style>

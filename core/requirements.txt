@@ -7,3 +7,4 @@ psycopg2
 pydantic[email]
 pydantic[dotenv]
 pandas
+SQLAlchemy-Searchable

@@ -12,3 +12,8 @@ def get_all_citations() -> list[CitationResponse]:
     result = repository.get_all_citations()
     print(f'got results in {time.time() - t} seconds')
     return result
+
+
+@transactional
+def search(search_query: str):
+    return repository.search(search_query, 1)

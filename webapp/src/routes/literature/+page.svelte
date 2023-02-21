@@ -32,21 +32,21 @@
 
 		(async () => {
 			const data = await fetchCitations();
-			console.log(data);
 			graph.import(data);
-			console.log(graph);
 			circlepack.assign(graph);
 			const sensibleSettings = forceAtlas2.inferSettings(graph);
 			sensibleSettings.barnesHutOptimize = true;
 			sensibleSettings.gravity = 0.1;
 			sensibleSettings.outboundAttractionDistribution = true;
+			sensibleSettings.strongGravityMode = true;
 			const fa2Layout = new FA2Layout(graph, {
 				settings: sensibleSettings,
 			});
 			// Cheap trick: tilt the camera a bit to make labels more readable:
 			const renderer = new Sigma(graph, container, {
 				defaultNodeColor: '#36c9c9',
-				defaultEdgeColor: '#36c9c9'
+				defaultEdgeColor: '#36c9c9',
+				allowInvalidContainer: true
 			});
 			renderer.getCamera().setState({
 				angle: 0.2,
@@ -67,6 +67,7 @@
 			renderer.setSetting("nodeReducer", (node, data) => {
 				const res: Partial<NodeDisplayData> = { ...data };
 
+				// res.size = graph.neighbors(node).length + 1;
 				if (!state.hoveredNode) {
 					res.label = '';
 				}
@@ -74,6 +75,10 @@
 				if (state.hoveredNeighbors && !state.hoveredNeighbors.has(node) && state.hoveredNode !== node) {
 					res.label = '';
 					res.color = 'hsl(208, 33%, 20%)';
+				}
+
+				if (state.hoveredNeighbors && state.hoveredNeighbors.has(node)) {
+					res.highlighted = true;
 				}
 
 				if (state.selectedNode === node) {
@@ -120,7 +125,7 @@
 		const nodes = new Map<string, any>();
 		const edges = new Map<string, any>();
 
-		const response = await fetch('http://localhost:8000/api/v1/citations');
+		const response = await fetch('http://localhost:8000/api/v1/citations/search');
 		const citations: any[] = await response.json();
 
 		citations.forEach((citation) => {
@@ -128,6 +133,7 @@
 				key: citation.cited.id,
 				attributes: {
 					label: citation.cited.title,
+					size: Math.log(citation.cited.citation_score)
 				}
 			});
 			nodes.set(citation.citing.id, {

@@ -27,3 +27,7 @@ def find_literature_by_title(title: str, db: Session) -> Optional[LiteratureMode
 def find_literature_by_doi(doi: str, db: Session) -> Optional[LiteratureModel]:
     return db.query(LiteratureModel).filter(LiteratureModel.doi == doi).first()
 
+
+@db
+def search_literature(query: str, citation_depth: int, db: Session) -> Optional[list[LiteratureModel]]:
+    return db.query(LiteratureModel).filter(LiteratureModel.title.contains(query)).all()  # TODO: real search

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class LiteratureStump(BaseModel):
 	id: int
 	title: str
-	citation_score: int
+	citation_score: Optional[int]
 
 	class Config:
 		orm_mode = True

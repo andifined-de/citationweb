@@ -18,3 +18,4 @@ class FlatCitationModel(Base):
     citing_id = Column('citing_id', Integer, ForeignKey('literatures.id'), primary_key=True)
     cited_title = Column('cited_title', String)
     citing_title = Column('citing_title', String)
+    citation_score = Column('citation_score', Integer)

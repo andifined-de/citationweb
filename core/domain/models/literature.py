@@ -66,13 +66,43 @@ class LiteratureModel(Base):
 c = table('citations', column('cited_id'), column('citing_id'))
 l1 = table('literatures', column('id'), column('title')).alias('l1')
 l2 = table('literatures', column('id'), column('title')).alias('l2')
-citation_literature_view = select([
+count_query = select([
+    column('cited_id'),
+    func.count('cited_id').label('citation_score')
+]).select_from(c).group_by('cited_id').subquery()
+citation_query = select([
     column('cited_id'),
     column('citing_id'),
     text('l1.title as cited_title'),
-    text('l2.title as citing_title')#,
-#    func.count('cited_id')
-]).select_from(c).join(l1, c.c.cited_id == l1.c.id).join(l2, c.c.citing_id == l2.c.id)
+    text('l2.title as citing_title')
+]).select_from(c).join(l1, c.c.cited_id == l1.c.id).join(l2, c.c.citing_id == l2.c.id).subquery().alias('cit')
+citation_literature_view = select([
+    text('cit.cited_id as cited_id'),
+    column('citing_id'),
+    column('cited_title'),
+    column('citing_title'),
+    column('citation_score')
+]).select_from(citation_query).join(count_query, count_query.c.cited_id == citation_query.c.cited_id)
 print(str(citation_literature_view))
 sqlalchemy_utils.create_materialized_view('citation_literature_view', citation_literature_view, Base.metadata)
-#Base.metadata.create_all(engine)
+
+
+"""
+select
+	sub.cited_id,
+	citing_id,
+	cited_title,
+	citing_title,
+	citation_score
+from (SELECT
+		citations.cited_id as cited_id,
+		citing_id,
+		l1.title as cited_title,
+		l2.title as citing_title
+	FROM citations
+	JOIN literatures AS l1 ON citations.cited_id = l1.id
+	JOIN literatures AS l2 ON citations.citing_id = l2.id
+) AS sub join (
+	select cited_id, count(cited_id) as citation_score from citations group by cited_id
+) as count_sub on sub.cited_id = count_sub.cited_id order by citation_score desc
+"""

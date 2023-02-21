@@ -119,7 +119,7 @@ const state: State = {};
 		const nodes = new Map<string, any>();
 		const edges = new Map<string, any>();
 
-		const response = await fetch('http://localhost:8000/api/v1/author-citations');
+		const response = await fetch('http://localhost:8000/api/v1/authors');
 		const citations: any[] = await response.json();
 
 		citations.forEach((citation) => {
