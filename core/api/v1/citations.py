@@ -11,5 +11,5 @@ async def get_citation_network():
     return citation_service.get_all_citations()
 
 @citation_router.get('/search', response_model=list[CitationResponse])
-async def search_citations():
-    return citation_service.search('The Influence of')
+async def search_citations(q: str):
+    return citation_service.search(q)
