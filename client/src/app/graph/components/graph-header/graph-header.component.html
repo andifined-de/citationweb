@@ -1,0 +1,4 @@
+<form [formGroup]="searchForm" (ngSubmit)="onSearchSubmit()">
+	<input type="search" formControlName="query" placeholder="Search for literature">
+	<button type="submit">Search</button>
+</form>
